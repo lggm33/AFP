@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: afp_postgres
+    environment:
+      POSTGRES_DB: afp_db
+      POSTGRES_USER: afp_user
+      POSTGRES_PASSWORD: afp_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data: 
