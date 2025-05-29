@@ -1,15 +1,20 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime
-from app.infrastructure.database.db import Base
+from dataclasses import dataclass
+from typing import Optional
 
-class Transaction(Base):
-    __tablename__ = "transactions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    description = Column(String)
-    amount = Column(Float)
-    date = Column(DateTime)
-    source = Column(String)
-    email_id = Column(String)
-    created_at = Column(DateTime, default=datetime.now)
-    updated_at = Column(DateTime, default=datetime.now)
+@dataclass
+class Transaction:
+    id: Optional[int] = None
+    description: str = ""
+    amount: float = 0.0
+    date: Optional[datetime] = None
+    source: str = ""
+    email_id: str = ""
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    from_bank: str = ""
+    to_bank: str = ""
+    # Nuevos campos para trazabilidad
+    email_parsing_job_id: Optional[int] = None
+    confidence_score: float = 0.0  # Confianza del parsing (0.0 - 1.0)
+    verification_status: str = "auto"  # auto, manual_verified, disputed

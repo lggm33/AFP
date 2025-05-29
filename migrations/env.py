@@ -8,7 +8,15 @@ from alembic import context
 # Import your models and config
 from app.infrastructure.database.db import Base
 from app.config import settings
-from app.domain.models import *  # This will import all models
+# Import ORM models for Alembic detection
+from app.infrastructure.database.models import (
+    UserDB, 
+    IntegrationDB, 
+    BankDB, 
+    EmailImportJobDB, 
+    EmailParsingJobDB, 
+    TransactionDB
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

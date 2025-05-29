@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Always verify the project structure before any suggestion or code change and referer to [CONTEXTO_PROYECTO.md](mdc:CONTEXTO_PROYECTO.md)
+In any change, update this file. 
+To start the app we always should use ./start.sh
+When I ask anything, do not create the code inmediatamente in the chat, just give a logic example and wait if I want to implement something or not. 
