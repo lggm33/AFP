@@ -76,4 +76,9 @@ Thumbs.db
 *.seed
 *.pid.lock
 
+# AFP specific
+.models_hash
+credentials.json
+token.json
+
 __pycache__/
