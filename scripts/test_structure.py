@@ -5,7 +5,7 @@ Script para probar la nueva estructura de AFP
 
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

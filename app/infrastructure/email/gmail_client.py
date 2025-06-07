@@ -2,7 +2,7 @@ import os
 import base64
 import json
 from typing import List, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -223,7 +223,6 @@ class GmailAPIClient:
             date_str = since_date.strftime('%Y/%m/%d')
             query_parts.append(f'after:{date_str}')
             
-            # EXCLUIR emails ya procesados (sin nuestro label)
             if self.afp_label_id:
                 query_parts.append(f'-label:{self.AFP_LABEL_NAME}')
             
@@ -301,23 +300,40 @@ class GmailAPIClient:
             return None
     
     def _extract_body(self, payload: Dict) -> str:
-        """Extraer el body del email"""
+        """Extraer el body del email - mejorado para manejar text/html también"""
+        import base64
+        
         body = ""
         
+        def decode_data(data):
+            if data:
+                try:
+                    return base64.urlsafe_b64decode(data).decode('utf-8', errors='ignore')
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Error decodificando body: {e}")
+                    return ""
+            return ""
+        
         if 'parts' in payload:
-            # Email multiparte
+            # Email multiparte - probar text/plain primero, luego text/html
+            text_plain_body = ""
+            text_html_body = ""
+            
             for part in payload['parts']:
+                data = part['body'].get('data', '')
                 if part['mimeType'] == 'text/plain':
-                    data = part['body'].get('data', '')
-                    if data:
-                        body = base64.urlsafe_b64decode(data).decode('utf-8', errors='ignore')
-                        break
+                    text_plain_body = decode_data(data)
+                elif part['mimeType'] == 'text/html':
+                    text_html_body = decode_data(data)
+            
+            # Preferir text/plain, pero usar HTML si no hay plain
+            body = text_plain_body if text_plain_body else text_html_body
+            
         else:
-            # Email simple
-            if payload['mimeType'] == 'text/plain':
-                data = payload['body'].get('data', '')
-                if data:
-                    body = base64.urlsafe_b64decode(data).decode('utf-8', errors='ignore')
+            # Email simple - manejar tanto text/plain como text/html
+            data = payload['body'].get('data', '')
+            if payload.get('mimeType') in ['text/plain', 'text/html']:
+                body = decode_data(data)
         
         return body
     

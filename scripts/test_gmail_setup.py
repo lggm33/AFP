@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, '.')
 
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from app.core.database import init_database, DatabaseSession
 from app.models.user import User
 from app.models.integration import Integration

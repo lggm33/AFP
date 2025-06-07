@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, Float, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -14,6 +14,13 @@ class ParsingRule(Base):
     priority = Column(Integer, default=0, nullable=False, index=True)  # Orden de aplicación (mayor = más prioridad)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     confidence_boost = Column(Float, default=0.0, nullable=False)  # Boost de confianza si match (+0.1, +0.2, etc)
+    
+    # GENERACIÓN CON AI (nuevos campos)
+    generation_method = Column(String(50), default="manual", nullable=False)  # "manual", "ai_generated", "ai_refined"
+    ai_model_used = Column(String(100), nullable=True)  # "gpt-4", "claude-3", etc. (solo si generation_method != "manual")
+    ai_prompt_used = Column(Text, nullable=True)  # Prompt que se usó para generar la regla
+    training_emails_count = Column(Integer, default=0, nullable=False)  # Cantidad de emails usados para entrenar
+    training_emails_sample = Column(JSON, nullable=True)  # Muestra de emails usados (IDs o extractos)
     
     # Metadata
     description = Column(Text, nullable=True)  # Descripción humana del patrón

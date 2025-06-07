@@ -7,4 +7,6 @@ Always verify the project structure before any suggestion or code change and ref
 In any change, update this file. 
 To start the app we always should use ./start.sh
 When I ask anything, do not create the code inmediatamente in the chat, just give a logic example and wait if I want to implement something or not. 
-All de comments and code must be in english
+All de comments and code must be in english but you should response in Spanish in the chat.
+If you find comments in Spanish, you should translate them to english
+All the scripts created by you for testing o debbing should be created in the script carpet

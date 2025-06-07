@@ -34,4 +34,5 @@ class Bank(Base):
     
     # Relaciones
     parsing_jobs = relationship("EmailParsingJob", back_populates="bank")
-    parsing_rules = relationship("ParsingRule", back_populates="bank", cascade="all, delete-orphan") 
+    parsing_rules = relationship("ParsingRule", back_populates="bank", cascade="all, delete-orphan")
+    email_templates = relationship("BankEmailTemplate", back_populates="bank", cascade="all, delete-orphan") 

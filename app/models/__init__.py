@@ -8,6 +8,8 @@ from .bank import Bank
 from .transaction_parsing_job import TransactionParsingJob
 from .parsing_rule import ParsingRule
 from .processing_log import ProcessingLog
+from .job_queue import JobQueue
+from .bank_email_template import BankEmailTemplate
 
 __all__ = [
     'User',
@@ -18,5 +20,7 @@ __all__ = [
     'Bank',
     'TransactionParsingJob',
     'ParsingRule',
-    'ProcessingLog'
+    'ProcessingLog',
+    'JobQueue',
+    'BankEmailTemplate'
 ] 

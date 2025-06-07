@@ -6,7 +6,7 @@ Script para limpiar jobs huérfanos que quedaron en estado "running"
 import sys
 sys.path.insert(0, '.')
 
-from datetime import datetime
+from datetime import datetime, UTC
 from app.core.database import DatabaseSession
 from app.models.email_import_job import EmailImportJob
 

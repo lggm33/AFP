@@ -102,6 +102,8 @@ def init_database():
         from app.models.transaction_parsing_job import TransactionParsingJob
         from app.models.parsing_rule import ParsingRule
         from app.models.processing_log import ProcessingLog
+        from app.models.job_queue import JobQueue
+        from app.models.bank_email_template import BankEmailTemplate
         
         # Detectar si necesitamos recrear tablas
         needs_recreate = should_recreate_tables()
@@ -160,4 +162,58 @@ class DatabaseSession:
                 self.session.rollback()
             else:
                 self.session.commit()
-            close_db_session(self.session) 
+            close_db_session(self.session)
+
+
+# Thread-safe database session manager for workers
+import threading
+
+class ThreadSafeDB:
+    """Thread-safe database object that creates sessions per thread"""
+    
+    def __init__(self):
+        self._local = threading.local()
+    
+    @property
+    def session(self):
+        """Get session for current thread"""
+        if not hasattr(self._local, 'session') or self._local.session is None:
+            self._local.session = get_db_session()
+        return self._local.session
+    
+    def commit(self):
+        """Commit current thread's session"""
+        if hasattr(self._local, 'session') and self._local.session:
+            try:
+                self._local.session.commit()
+            except Exception as e:
+                logger.error(f"Error committing session: {e}")
+                self.rollback()
+                raise
+    
+    def rollback(self):
+        """Rollback current thread's session"""
+        if hasattr(self._local, 'session') and self._local.session:
+            try:
+                self._local.session.rollback()
+            except Exception as e:
+                logger.error(f"Error rolling back session: {e}")
+    
+    def close(self):
+        """Close current thread's session"""
+        if hasattr(self._local, 'session') and self._local.session:
+            try:
+                close_db_session(self._local.session)
+            except Exception as e:
+                logger.error(f"Error closing session: {e}")
+            finally:
+                self._local.session = None
+    
+    def refresh_session(self):
+        """Force create a new session for current thread"""
+        self.close()
+        self._local.session = get_db_session()
+        return self._local.session
+
+# Global thread-safe db object for workers
+db = ThreadSafeDB() 
