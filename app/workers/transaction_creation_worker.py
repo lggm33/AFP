@@ -6,10 +6,10 @@ from .base_worker import BaseWorker
 from ..models.email_parsing_job import EmailParsingJob
 from ..models.job_queue import JobQueue
 from ..models.bank import Bank
-from ..models.parsing_rule import ParsingRule
+
 from ..models.transaction import Transaction
 from ..models.bank_email_template import BankEmailTemplate
-from ..services.ai_rule_generator import AIRuleGeneratorService
+
 from ..services.bank_template_service import BankTemplateService
 from ..core.database import db
 
@@ -200,46 +200,11 @@ class TransactionCreationWorker(BaseWorker):
                     'error_message': f'No email templates configured for bank: {bank.name}. Please configure templates in setup.'
                 }
             
-            # LEGACY FALLBACK: Use old parsing rules system if templates fail
-            parsing_rules = db.session.query(ParsingRule).filter_by(
-                bank_id=bank.id,
-                is_active=True
-            ).order_by(ParsingRule.priority.desc()).all()
-            
-            if parsing_rules:
-                self.logger.info(f"Falling back to legacy parsing rules for {bank.name}")
-                # Try to extract transaction data using old rules system
-                extraction_result = self._extract_transaction_data(parsing_job.email_body, parsing_rules)
-                
-                if not extraction_result['success']:
-                    return {
-                        'success': False,
-                        'status': 'no_transaction_found',
-                        'error_message': 'No parsing rules matched the email content'
-                    }
-                
-                # Create transaction
-                transaction = self._create_transaction(
-                    parsing_job, 
-                    bank, 
-                    extraction_result['transaction_data']
-                )
-                
-                db.session.add(transaction)
-                
-                return {
-                    'success': True,
-                    'transaction_data': extraction_result['transaction_data'],
-                    'rules_used': extraction_result['rules_used'],
-                    'confidence_score': extraction_result['confidence_score'],
-                    'transaction_id': transaction.id
-                }
-            
-            # No templates and no parsing rules found
+            # No templates configured - return clear error
             return {
                 'success': False,
-                'status': 'no_processing_method',
-                'error_message': f'No templates or parsing rules available for bank: {bank.name}'
+                'status': 'no_templates_configured',
+                'error_message': f'No email templates configured for bank: {bank.name}. Please run bank setup to configure templates.'
             }
             
         except Exception as e:
@@ -269,103 +234,7 @@ class TransactionCreationWorker(BaseWorker):
         
         return None
     
-    def _extract_transaction_data(self, email_body: str, parsing_rules: list) -> Dict[str, Any]:
-        """Extract transaction data using parsing rules"""
-        for rule in parsing_rules:
-            try:
-                match = re.search(rule.regex_pattern, email_body, re.MULTILINE | re.IGNORECASE)
-                if match:
-                    transaction_data = match.groupdict()
-                    
-                    # Clean and validate extracted data
-                    cleaned_data = self._clean_transaction_data(transaction_data)
-                    
-                    if cleaned_data:
-                        return {
-                            'success': True,
-                            'transaction_data': cleaned_data,
-                            'rules_used': [{
-                                'rule_id': rule.id,
-                                'rule_type': rule.rule_type,
-                                'pattern': rule.regex_pattern,
-                                'confidence': rule.confidence_score
-                            }],
-                            'confidence_score': rule.confidence_score
-                        }
-                        
-            except re.error as e:
-                self.logger.error(f"Invalid regex pattern in rule {rule.id}: {str(e)}")
-                continue
-            except Exception as e:
-                self.logger.error(f"Error applying parsing rule {rule.id}: {str(e)}")
-                continue
-        
-        return {
-            'success': False,
-            'error_message': 'No rules matched'
-        }
-    
-    def _clean_transaction_data(self, raw_data: Dict[str, str]) -> Optional[Dict[str, Any]]:
-        """Clean and validate extracted transaction data"""
-        try:
-            cleaned = {}
-            
-            # Clean amount - REQUIRED
-            if 'amount' in raw_data:
-                amount_str = raw_data['amount'].replace(',', '').replace('$', '').replace('€', '').replace('£', '').strip()
-                # Handle negative amounts (withdrawals)
-                if amount_str.startswith('-'):
-                    amount_str = amount_str[1:]
-                    cleaned['is_debit'] = True
-                else:
-                    cleaned['is_debit'] = False
-                    
-                try:
-                    cleaned['amount'] = float(amount_str)
-                except ValueError:
-                    return None
-            else:
-                return None  # Amount is required
-            
-            # Clean description
-            if 'description' in raw_data:
-                cleaned['description'] = raw_data['description'].strip()[:500]  # Limit to model field size
-            
-            # Clean source
-            if 'source' in raw_data:
-                cleaned['source'] = raw_data['source'].strip()[:255]  # Limit to model field size
-            
-            # Clean date
-            if 'date' in raw_data:
-                date_str = raw_data['date'].strip()
-                # Try multiple date formats
-                date_formats = ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%Y-%m-%d %H:%M:%S']
-                parsed_date = None
-                
-                for fmt in date_formats:
-                    try:
-                        parsed_date = datetime.strptime(date_str, fmt)
-                        break
-                    except ValueError:
-                        continue
-                
-                cleaned['date'] = parsed_date if parsed_date else datetime.now(UTC)
-            else:
-                cleaned['date'] = datetime.now(UTC)  # Default to now if no date found
-            
-            # Clean from_bank
-            if 'from_bank' in raw_data:
-                cleaned['from_bank'] = raw_data['from_bank'].strip()[:255]
-            
-            # Clean to_bank  
-            if 'to_bank' in raw_data:
-                cleaned['to_bank'] = raw_data['to_bank'].strip()[:255]
-            
-            return cleaned
-            
-        except Exception as e:
-            self.logger.error(f"Error cleaning transaction data: {str(e)}")
-            return None
+
     
     def _clean_template_extraction(self, raw_data: Dict[str, str]) -> Optional[Dict[str, Any]]:
         """Clean and validate template extraction data"""

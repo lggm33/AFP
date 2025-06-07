@@ -8,7 +8,7 @@ class Bank(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, index=True)
     domain = Column(String(255), nullable=False, index=True)  # @bancolombia.com.co
-    parsing_patterns = Column(Text, nullable=True)  # JSON con regex patterns (LEGACY - usar ParsingRule)
+    parsing_patterns = Column(Text, nullable=True)  # JSON con regex patterns (LEGACY - OBSOLETO)
     is_active = Column(Boolean, default=True, nullable=False)
     confidence_threshold = Column(Float, default=0.7, nullable=False)
     created_at = Column(DateTime, nullable=True)
@@ -34,5 +34,5 @@ class Bank(Base):
     
     # Relaciones
     parsing_jobs = relationship("EmailParsingJob", back_populates="bank")
-    parsing_rules = relationship("ParsingRule", back_populates="bank", cascade="all, delete-orphan")
+
     email_templates = relationship("BankEmailTemplate", back_populates="bank", cascade="all, delete-orphan") 

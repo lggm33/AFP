@@ -100,7 +100,7 @@ def init_database():
         from app.models.email_parsing_job import EmailParsingJob
         from app.models.bank import Bank
         from app.models.transaction_parsing_job import TransactionParsingJob
-        from app.models.parsing_rule import ParsingRule
+    
         from app.models.processing_log import ProcessingLog
         from app.models.job_queue import JobQueue
         from app.models.bank_email_template import BankEmailTemplate

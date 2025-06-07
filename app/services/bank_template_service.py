@@ -9,7 +9,7 @@ from app.models.bank_email_template import BankEmailTemplate
 from app.models.bank import Bank
 from app.models.email_parsing_job import EmailParsingJob
 from app.core.database import DatabaseSession
-from app.services.ai_rule_generator import AIRuleGeneratorService
+
 
 logger = logging.getLogger(__name__)
 

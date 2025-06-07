@@ -11,7 +11,7 @@ from app.models.user import User
 from app.models.integration import Integration
 from app.models.email_import_job import EmailImportJob
 from app.models.bank import Bank
-from app.models.parsing_rule import ParsingRule
+
 from app.models.bank_email_template import BankEmailTemplate
 from ..services.bank_setup_service import BankSetupService
 
@@ -215,40 +215,7 @@ def create_default_banks():
             'domain': 'notificacionesbaccr.com',
             'sender_emails': ['notificacion@notificacionesbaccr.com'],
             'sender_domains': ['notificacionesbaccr.com', 'baccredomatic.com'],
-            'parsing_rules': [
-                {
-                    'rule_name': 'BAC Sender Identification',
-                    'rule_type': 'sender',
-                    'regex_pattern': r'notificacion@notificacionesbaccr\.com',
-                    'description': 'Identify BAC emails by sender',
-                    'is_active': True,
-                    'priority': 10
-                },
-                {
-                    'rule_name': 'BAC Amount Extraction',
-                    'rule_type': 'amount',
-                    'regex_pattern': r'₡\s*([\d,\.]+)',
-                    'description': 'Extract amount from BAC notifications',
-                    'is_active': True,
-                    'priority': 10
-                },
-                {
-                    'rule_name': 'BAC Merchant Extraction',
-                    'rule_type': 'merchant',
-                    'regex_pattern': r'transacción\s+(.+?)\s+\d{2}-\d{2}-\d{4}',
-                    'description': 'Extract merchant from BAC notifications',
-                    'is_active': True,
-                    'priority': 10
-                },
-                {
-                    'rule_name': 'BAC Date Extraction',
-                    'rule_type': 'date',
-                    'regex_pattern': r'(\d{2}-\d{2}-\d{4})',
-                    'description': 'Extract date from BAC notifications',
-                    'is_active': True,
-                    'priority': 10
-                }
-            ]
+
         },
         {
             'name': 'Scotiabank Costa Rica',
@@ -256,24 +223,7 @@ def create_default_banks():
             'domain': 'scotiabank.com',
             'sender_emails': ['AlertasScotiabank@scotiabank.com'],
             'sender_domains': ['scotiabank.com'],
-            'parsing_rules': [
-                {
-                    'rule_name': 'Scotia Sender Identification',
-                    'rule_type': 'sender',
-                    'regex_pattern': r'AlertasScotiabank@scotiabank\.com',
-                    'description': 'Identify Scotiabank emails by sender',
-                    'is_active': True,
-                    'priority': 10
-                },
-                {
-                    'rule_name': 'Scotia Amount Extraction',
-                    'rule_type': 'amount',
-                    'regex_pattern': r'USD\s*([\d,\.]+)|₡\s*([\d,\.]+)',
-                    'description': 'Extract amount from Scotia alerts (USD or CRC)',
-                    'is_active': True,
-                    'priority': 10
-                }
-            ]
+
         },
         {
             'name': 'Banco de Costa Rica',
@@ -281,24 +231,7 @@ def create_default_banks():
             'domain': 'bancobcr.com',
             'sender_emails': ['mensajero@bancobcr.com'],
             'sender_domains': ['bancobcr.com'],
-            'parsing_rules': [
-                {
-                    'rule_name': 'BCR Sender Identification',
-                    'rule_type': 'sender',
-                    'regex_pattern': r'mensajero@bancobcr\.com',
-                    'description': 'Identify BCR emails by sender',
-                    'is_active': True,
-                    'priority': 10
-                },
-                {
-                    'rule_name': 'BCR Amount Extraction',
-                    'rule_type': 'amount',
-                    'regex_pattern': r'₡\s*([\d,\.]+)',
-                    'description': 'Extract amount from BCR SINPE transactions',
-                    'is_active': True,
-                    'priority': 10
-                }
-            ]
+
                 }
         ]
         
@@ -335,100 +268,43 @@ def create_default_banks():
                 banks_created += 1
                 logger.info(f"✅ Created bank: {bank.name} (ID: {bank.id})")
             
-            # Create parsing rules for this bank
-            for rule_config in bank_config['parsing_rules']:
-                existing_rule = db.query(ParsingRule).filter_by(
-                    bank_id=bank.id,
-                    rule_name=rule_config['rule_name']
-                ).first()
-                
-                if existing_rule:
-                    logger.info(f"✅ Parsing rule already exists: {existing_rule.rule_name}")
-                    continue
-                
-                parsing_rule = ParsingRule(
-                    bank_id=bank.id,
-                    rule_name=rule_config['rule_name'],
-                    rule_type=rule_config['rule_type'],
-                    regex_pattern=rule_config['regex_pattern'],
-                    description=rule_config['description'],
-                    is_active=rule_config['is_active'],
-                    priority=rule_config['priority'],
-                    generation_method="manual",
-                    created_at=datetime.now(UTC),
-                    updated_at=datetime.now(UTC)
-                )
-                
-                db.add(parsing_rule)
-                rules_created += 1
-                logger.info(f"✅ Created parsing rule: {parsing_rule.rule_name}")
+            # Note: Parsing rules are obsolete, now using BankEmailTemplates via BankSetupService
         
         db.commit()
         
-        logger.info(f"🎯 Banks setup complete: {banks_created} banks created, {rules_created} parsing rules created")
-        return banks_created, rules_created
+        logger.info(f"🎯 Banks setup complete: {banks_created} banks created")
+        return banks_created, 0  # rules_created is now 0 since we don't create parsing rules
 
 def _create_default_banks_in_session(db):
     """Create default banks and their parsing rules within existing session"""
     logger.info("🏦 Creating default banks and parsing rules...")
     
-    # Banks configuration (same as above)
+    # Banks configuration (templates are now created via BankSetupService)
     banks_config = [
         {
             'name': 'BAC Costa Rica',
             'bank_code': 'BAC',
             'domain': 'notificacionesbaccr.com',
             'sender_emails': ['notificacion@notificacionesbaccr.com'],
-            'sender_domains': ['notificacionesbaccr.com', 'baccredomatic.com'],
-            'parsing_rules': [
-                {
-                    'rule_name': 'BAC Sender Identification',
-                    'rule_type': 'sender',
-                    'regex_pattern': r'notificacion@notificacionesbaccr\.com',
-                    'description': 'Identify BAC emails by sender',
-                    'is_active': True,
-                    'priority': 10
-                }
-            ]
+            'sender_domains': ['notificacionesbaccr.com', 'baccredomatic.com']
         },
         {
             'name': 'Scotiabank Costa Rica',
             'bank_code': 'SCOTIA',
             'domain': 'scotiabank.com',
             'sender_emails': ['AlertasScotiabank@scotiabank.com'],
-            'sender_domains': ['scotiabank.com'],
-            'parsing_rules': [
-                {
-                    'rule_name': 'Scotia Sender Identification',
-                    'rule_type': 'sender',
-                    'regex_pattern': r'AlertasScotiabank@scotiabank\.com',
-                    'description': 'Identify Scotiabank emails by sender',
-                    'is_active': True,
-                    'priority': 10
-                }
-            ]
+            'sender_domains': ['scotiabank.com']
         },
         {
             'name': 'Banco de Costa Rica',
             'bank_code': 'BCR',
             'domain': 'bancobcr.com',
             'sender_emails': ['mensajero@bancobcr.com'],
-            'sender_domains': ['bancobcr.com'],
-            'parsing_rules': [
-                {
-                    'rule_name': 'BCR Sender Identification',
-                    'rule_type': 'sender',
-                    'regex_pattern': r'mensajero@bancobcr\.com',
-                    'description': 'Identify BCR emails by sender',
-                    'is_active': True,
-                    'priority': 10
-                }
-            ]
+            'sender_domains': ['bancobcr.com']
         }
     ]
     
     banks_created = 0
-    rules_created = 0
     
     for bank_config in banks_config:
         # Check if bank already exists
@@ -460,36 +336,10 @@ def _create_default_banks_in_session(db):
             banks_created += 1
             logger.info(f"✅ Created bank: {bank.name} (ID: {bank.id})")
         
-        # Create parsing rules for this bank
-        for rule_config in bank_config['parsing_rules']:
-            existing_rule = db.query(ParsingRule).filter_by(
-                bank_id=bank.id,
-                rule_name=rule_config['rule_name']
-            ).first()
-            
-            if existing_rule:
-                logger.info(f"✅ Parsing rule already exists: {existing_rule.rule_name}")
-                continue
-            
-            parsing_rule = ParsingRule(
-                bank_id=bank.id,
-                rule_name=rule_config['rule_name'],
-                rule_type=rule_config['rule_type'],
-                regex_pattern=rule_config['regex_pattern'],
-                description=rule_config['description'],
-                is_active=rule_config['is_active'],
-                priority=rule_config['priority'],
-                generation_method="manual",
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC)
-            )
-            
-            db.add(parsing_rule)
-            rules_created += 1
-            logger.info(f"✅ Created parsing rule: {parsing_rule.rule_name}")
+        # Note: Parsing rules are obsolete, now using BankEmailTemplates via BankSetupService
     
-    logger.info(f"🎯 Banks setup complete: {banks_created} banks created, {rules_created} parsing rules created")
-    return banks_created, rules_created
+    logger.info(f"🎯 Banks setup complete: {banks_created} banks created")
+    return banks_created, 0  # rules_created is now 0 since we don't create parsing rules
 
 def run_initial_setup():
     """Run the complete initial setup"""
