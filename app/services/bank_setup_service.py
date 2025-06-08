@@ -288,14 +288,14 @@ class BankSetupService:
             {
                 'name': 'BAC Costa Rica',
                 'bank_code': 'BAC_CR',
-                'sender_emails': ['notificaciones@baccredomatic.com', 'tarjetas@baccredomatic.com'],
-                'sender_domains': ['baccredomatic.com']
+                'sender_emails': ['notificacion@notificacionesbaccr.com'],
+                'sender_domains': ['notificacionesbaccr.com', 'baccredomatic.com']
             },
             {
                 'name': 'Scotiabank Costa Rica',
                 'bank_code': 'SCOTIA_CR',
-                'sender_emails': ['notificaciones@scotiabankcr.com', 'tarjetas@scotiabankcr.com'],
-                'sender_domains': ['scotiabankcr.com']
+                'sender_emails': ['AlertasScotiabank@scotiabank.com'],
+                'sender_domains': ['scotiabank.com']
             },
             {
                 'name': 'Banco Nacional Costa Rica',

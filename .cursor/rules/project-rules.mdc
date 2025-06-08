@@ -10,3 +10,4 @@ When I ask anything, do not create the code inmediatamente in the chat, just giv
 All de comments and code must be in english but you should response in Spanish in the chat.
 If you find comments in Spanish, you should translate them to english
 All the scripts created by you for testing o debbing should be created in the script carpet
+If you need to make changes to the database you can use psql:  DATABASE_URL="postgresql+psycopg://afp_user:afp_password@localhost:5432/afp_db"

@@ -174,33 +174,39 @@ def _create_email_import_job_in_session(db, integration):
     logger.info(f"✅ Created EmailImportJob: ID {email_import_job.id} for integration {integration.id}")
     return email_import_job
 
-def setup_oauth_instructions(integration):
+def setup_oauth_instructions(integration_id):
     """Show OAuth setup status and instructions if needed"""
-    if integration.access_token and integration.refresh_token:
-        logger.info("✅ GMAIL OAUTH ALREADY CONFIGURED:")
-        logger.info("="*60)
-        logger.info("Gmail API tokens are loaded and ready to use!")
-        logger.info("")
-        logger.info(f"Integration ID: {integration.id}")
-        logger.info(f"Email account: {integration.email_account}")
-        logger.info(f"Tokens loaded from: token.json")
-        logger.info("")
-        logger.info("🚀 The system is ready to process emails automatically!")
-        logger.info("="*60)
-    else:
-        logger.info("📋 GMAIL OAUTH SETUP REQUIRED:")
-        logger.info("="*60)
-        logger.info("To enable automatic email import, you need to complete OAuth setup:")
-        logger.info("")
-        logger.info("1. Go to Google Cloud Console: https://console.cloud.google.com/")
-        logger.info("2. Create credentials for Gmail API (OAuth 2.0)")
-        logger.info("3. Download credentials.json")
-        logger.info("4. Place it in: app/infrastructure/email/credentials.json")
-        logger.info("5. Run OAuth authorization script")
-        logger.info("")
-        logger.info(f"Integration ID created: {integration.id}")
-        logger.info(f"Email account: {integration.email_account}")
-        logger.info("="*60)
+    with DatabaseSession() as db:
+        integration = db.query(Integration).get(integration_id)
+        if not integration:
+            logger.error(f"❌ Integration with ID {integration_id} not found")
+            return
+            
+        if integration.access_token and integration.refresh_token:
+            logger.info("✅ GMAIL OAUTH ALREADY CONFIGURED:")
+            logger.info("="*60)
+            logger.info("Gmail API tokens are loaded and ready to use!")
+            logger.info("")
+            logger.info(f"Integration ID: {integration.id}")
+            logger.info(f"Email account: {integration.email_account}")
+            logger.info(f"Tokens loaded from: token.json")
+            logger.info("")
+            logger.info("🚀 The system is ready to process emails automatically!")
+            logger.info("="*60)
+        else:
+            logger.info("📋 GMAIL OAUTH SETUP REQUIRED:")
+            logger.info("="*60)
+            logger.info("To enable automatic email import, you need to complete OAuth setup:")
+            logger.info("")
+            logger.info("1. Go to Google Cloud Console: https://console.cloud.google.com/")
+            logger.info("2. Create credentials for Gmail API (OAuth 2.0)")
+            logger.info("3. Download credentials.json")
+            logger.info("4. Place it in: app/infrastructure/email/credentials.json")
+            logger.info("5. Run OAuth authorization script")
+            logger.info("")
+            logger.info(f"Integration ID created: {integration.id}")
+            logger.info(f"Email account: {integration.email_account}")
+            logger.info("="*60)
 
 def create_default_banks():
     """Create default banks and their parsing rules"""
@@ -215,7 +221,6 @@ def create_default_banks():
             'domain': 'notificacionesbaccr.com',
             'sender_emails': ['notificacion@notificacionesbaccr.com'],
             'sender_domains': ['notificacionesbaccr.com', 'baccredomatic.com'],
-
         },
         {
             'name': 'Scotiabank Costa Rica',
@@ -223,7 +228,6 @@ def create_default_banks():
             'domain': 'scotiabank.com',
             'sender_emails': ['AlertasScotiabank@scotiabank.com'],
             'sender_domains': ['scotiabank.com'],
-
         },
         {
             'name': 'Banco de Costa Rica',
@@ -347,15 +351,23 @@ def run_initial_setup():
         logger.info("🎬 RUNNING INITIAL AFP SETUP")
         logger.info("="*50)
         
+        # Store IDs before session closes to avoid detached instances
+        integration_id = None
+        user_id = None
+        email_import_job_id = None
+        
         with DatabaseSession() as db:
             # Create default user
             user = _create_default_user_in_session(db)
+            user_id = user.id
             
             # Create Gmail integration
             integration = _create_gmail_integration_in_session(db, user)
+            integration_id = integration.id
             
             # Create EmailImportJob
             email_import_job = _create_email_import_job_in_session(db, integration)
+            email_import_job_id = email_import_job.id
             
             # Create default banks and parsing rules (legacy)
             banks_created, rules_created = _create_default_banks_in_session(db)
@@ -367,34 +379,41 @@ def run_initial_setup():
         logger.info("\n🏦 SETTING UP BANK TEMPLATES...")
         bank_setup_results = setup_banks_with_templates()
         
-        # Show OAuth setup instructions
-        setup_oauth_instructions(integration)
+        # Show OAuth setup instructions (using integration ID to avoid detached instance)
+        setup_oauth_instructions(integration_id)
         
-        logger.info("🎉 INITIAL SETUP COMPLETED SUCCESSFULLY!")
-        logger.info(f"   User: {user.email} (ID: {user.id})")
-        logger.info(f"   Integration: {integration.email_account} (ID: {integration.id})")
-        logger.info(f"   EmailImportJob: ID {email_import_job.id}")
-        logger.info(f"   Banks created: {banks_created}, Parsing rules: {rules_created}")
-        
-        # Show template setup results
-        if bank_setup_results:
-            successful_banks = len([r for r in bank_setup_results if r['success']])
-            total_templates = sum(r.get('templates_created', 0) for r in bank_setup_results if r['success'])
-            logger.info(f"   Bank templates: {successful_banks} banks configured, {total_templates} templates created")
-        
-        logger.info("")
-        
-        if integration.access_token and integration.refresh_token:
-            logger.info("🚀 AFP is ready to start processing emails immediately!")
-        else:
-            logger.info("🚀 AFP is ready to start processing emails once OAuth is completed!")
-        
-        return {
-            'user': user,
-            'integration': integration,
-            'email_import_job': email_import_job,
-            'bank_setup_results': bank_setup_results
-        }
+        # Get fresh objects to log details (avoiding detached instances)
+        with DatabaseSession() as db:
+            user = db.query(User).get(user_id)
+            integration = db.query(Integration).get(integration_id)
+            email_import_job = db.query(EmailImportJob).get(email_import_job_id)
+            
+            logger.info("🎉 INITIAL SETUP COMPLETED SUCCESSFULLY!")
+            logger.info(f"   User: {user.email} (ID: {user.id})")
+            logger.info(f"   Integration: {integration.email_account} (ID: {integration.id})")
+            logger.info(f"   EmailImportJob: ID {email_import_job.id}")
+            logger.info(f"   Banks created: {banks_created}, Parsing rules: {rules_created}")
+            
+            # Show template setup results
+            if bank_setup_results:
+                successful_banks = len([r for r in bank_setup_results if r['success']])
+                total_templates = sum(r.get('templates_created', 0) for r in bank_setup_results if r['success'])
+                logger.info(f"   Bank templates: {successful_banks} banks configured, {total_templates} templates created")
+            
+            logger.info("")
+            
+            # Check OAuth status (now in same session)
+            if integration.access_token and integration.refresh_token:
+                logger.info("🚀 AFP is ready to start processing emails immediately!")
+            else:
+                logger.info("🚀 AFP is ready to start processing emails once OAuth is completed!")
+            
+            return {
+                'user': user,
+                'integration': integration,
+                'email_import_job': email_import_job,
+                'bank_setup_results': bank_setup_results
+            }
         
     except Exception as e:
         logger.error(f"❌ Error in initial setup: {str(e)}")

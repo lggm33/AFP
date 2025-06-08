@@ -159,7 +159,36 @@ graph TD
 
 ### **🔧 PROBLEMAS RESUELTOS COMPLETAMENTE:**
 
-#### **1. ✅ Sesiones SQLAlchemy - RESUELTO 100%**
+#### **1. ✅ SQLAlchemy Detached Instance - RESUELTO 100%**
+```python
+# PROBLEMA ORIGINAL:
+setup_oauth_instructions(integration)  # ❌ ERROR: Instance not bound to session
+
+# SOLUCIÓN IMPLEMENTADA:
+integration_id = integration.id  # Store ID before session closes
+setup_oauth_instructions(integration_id)  # Pass ID instead of object
+
+def setup_oauth_instructions(integration_id):
+    with DatabaseSession() as db:
+        integration = db.query(Integration).get(integration_id)  # Fresh load
+        # Now can access integration.access_token without errors ✅
+```
+
+#### **2. ✅ Bank Identification - RESUELTO 100%**
+```python
+# PROBLEMA ORIGINAL:
+# Emails reales: AlertasScotiabank@scotiabank.com, notificacion@notificacionesbaccr.com
+# Configurados: notificaciones@scotiabankcr.com, notificaciones@baccredomatic.com
+# Resultado: no_bank_identified ❌
+
+# SOLUCIÓN IMPLEMENTADA:
+# Actualizada configuración con direcciones reales:
+BAC Costa Rica: ['notificacion@notificacionesbaccr.com'] ✅
+Scotiabank Costa Rica: ['AlertasScotiabank@scotiabank.com'] ✅
+# Resultado: 45 emails retroactivamente identificados ✅
+```
+
+#### **3. ✅ Sesiones SQLAlchemy Templates - RESUELTO 100%**
 ```python
 # ANTES (PROBLEMÁTICO):
 template = template_service.auto_generate_template()  # Returns detached object
@@ -305,3 +334,241 @@ scripts/
 - ✅ **NUEVO**: Sistema 100% basado en BankEmailTemplate
 
 **🚀 Ready for production deployment!**
+
+---
+
+## 📋 PLAN DE ACCIÓN - EVOLUCIÓN A SISTEMA FINANCIERO COMPLETO
+
+### 🎯 **PRÓXIMAS FASES DE DESARROLLO**
+
+**🚨 PROBLEMA ACTUAL IDENTIFICADO:**
+- ❌ Sistema de creación de templates NO funciona correctamente
+- ❌ Necesita rediseño y validación completa del flujo
+- ❌ Templates existentes pueden tener problemas de calidad/consistencia
+
+---
+
+## **🚀 FASE 0: ARREGLO CRÍTICO - SISTEMA DE TEMPLATES (1-2 semanas)**
+
+### **0.1 Diagnóstico y Rediseño de Templates**
+```python
+# Problemas a investigar:
+- Template generation quality y consistency
+- Template validation contra emails reales
+- Session handling en template services
+- AI prompt engineering optimization
+- Template performance y accuracy metrics
+```
+
+### **0.2 Sistema de Templates Robusto**
+```python
+# Mejoras críticas:
+- Template validation pipeline
+- Quality assurance automático
+- Batch template generation
+- Template versioning y rollback
+- Performance benchmarking
+```
+
+---
+
+## **🚀 FASE 1: FUNDAMENTOS FINANCIEROS (2-3 semanas)**
+
+### **1.1 Modelos de Categorización Financiera**
+```python
+# Nuevos modelos a crear:
+- Category (jerarquía: Alimentación > Restaurantes > Comida Rápida)
+- TransactionType (income/expense/transfer)  
+- PaymentMethod (cash/credit_card/debit_card/transfer)
+- Budget (presupuestos por categoría y período)
+- BudgetAlert (alertas de presupuesto)
+```
+
+### **1.2 Mejoras al Modelo Transaction**
+```python
+# Campos a agregar:
+- category_id (ForeignKey)
+- transaction_type (income/expense/transfer)
+- payment_method
+- is_recurring (bool)
+- budget_period (monthly/weekly/daily)
+- original_currency / exchange_rate
+```
+
+### **1.3 Servicios de Categorización**
+```python
+# Nuevos servicios:
+- CategoryService: Gestión de jerarquías de categorías
+- TransactionCategorizationService: Auto-categorización con IA
+- BudgetService: Gestión de presupuestos y alertas
+```
+
+---
+
+## **🎨 FASE 2: API Y FRONTEND BÁSICO (2-3 semanas)**
+
+### **2.1 API REST Completa**
+```python
+# Endpoints a implementar:
+/api/v1/auth/        # Autenticación y registro
+/api/v1/users/       # Gestión de usuarios  
+/api/v1/transactions/ # CRUD transacciones + categorización
+/api/v1/categories/   # Gestión de categorías
+/api/v1/budgets/     # Presupuestos y alertas
+/api/v1/banks/       # Gestión de bancos y templates
+/api/v1/integrations/ # Gestión de conexiones bancarias
+/api/v1/analytics/   # Reportes y métricas
+```
+
+### **2.2 Frontend Básico (React/Vue)**
+```javascript
+// Páginas principales:
+- Dashboard financiero con gráficos
+- Lista de transacciones con filtros
+- Gestión de categorías
+- Configuración de presupuestos  
+- Onboarding de bancos
+- Reportes financieros básicos
+```
+
+---
+
+## **🧠 FASE 3: INTELIGENCIA FINANCIERA (3-4 semanas)**
+
+### **3.1 Auto-Categorización Avanzada**
+```python
+# Funcionalidades:
+- Análisis de patrones de transacciones históricas
+- Sugerencias de categorización automática
+- Aprendizaje de preferencias del usuario
+- Detección de transacciones duplicadas
+```
+
+### **3.2 Sistema de Presupuestos Inteligente**
+```python
+# Funcionalidades:
+- Alertas proactivas de presupuesto
+- Sugerencias de presupuesto basadas en histórico
+- Predicción de gastos futuros
+- Alertas de gastos inusuales
+```
+
+### **3.3 Detección de Patrones**
+```python
+# Funcionalidades:
+- Transacciones recurrentes (suscripciones, salarios)
+- Análisis de tendencias de gasto
+- Identificación de oportunidades de ahorro
+- Detección de fraudes/anomalías
+```
+
+---
+
+## **📈 FASE 4: FUNCIONALIDADES AVANZADAS (4-5 semanas)**
+
+### **4.1 Gestión Multi-Banco**
+```python
+# Funcionalidades:
+- Conexión simultánea con múltiples bancos
+- Consolidación de cuentas
+- Transferencias entre bancos (tracking)
+- Balance total en tiempo real
+```
+
+### **4.2 Metas y Ahorros**
+```python
+# Nuevos modelos:
+- SavingsGoal (metas de ahorro)
+- Investment (seguimiento de inversiones básicas)
+- DebtTracker (seguimiento de deudas)
+```
+
+### **4.3 Reportes y Analytics**
+```python
+# Funcionalidades:
+- Reportes personalizables
+- Exportación a Excel/PDF
+- Comparación de períodos
+- Análisis de flujo de efectivo
+- Proyecciones financieras
+```
+
+---
+
+## **🌟 FASE 5: OPTIMIZACIÓN Y ESCALABILIDAD (2-3 semanas)**
+
+### **5.1 Performance y Escalabilidad**
+```python
+# Mejoras técnicas:
+- Caching de consultas frecuentes
+- Optimización de queries de reportes
+- Batch processing mejorado
+- Rate limiting por usuario
+```
+
+### **5.2 Notificaciones y Alerts**
+```python
+# Sistema de notificaciones:
+- Email notifications
+- Push notifications (si hay mobile app)
+- Webhook integrations
+- SMS alerts (opcional)
+```
+
+### **5.3 Seguridad Avanzada**
+```python
+# Mejoras de seguridad:
+- Encriptación de datos sensibles
+- Audit logging completo  
+- Rate limiting por endpoint
+- Validación de datos mejorada
+```
+
+---
+
+## **🎯 PRIORIZACIÓN ACTUALIZADA**
+
+### **🔥 CRÍTICA (Fase 0 - INMEDIATA)**
+1. **ARREGLAR sistema de templates** - Sistema actualmente roto
+2. **Validar template generation pipeline**
+3. **Asegurar calidad de templates existentes**
+4. **Testing completo del flujo de templates**
+
+### **🔥 ALTA PRIORIDAD (Fase 1)**
+1. **Categorización de transacciones** - Base fundamental
+2. **Tipos de transacción** (ingreso/gasto/transferencia)
+3. **Presupuestos básicos** por categoría
+4. **API REST básica** para transacciones
+
+### **⚡ MEDIA PRIORIDAD (Fase 2-3)**
+1. **Frontend básico** funcional
+2. **Auto-categorización con IA**
+3. **Alertas de presupuesto**
+4. **Reportes básicos**
+
+### **✨ BAJA PRIORIDAD (Fase 4-5)**
+1. **Metas de ahorro**
+2. **Análisis predictivo avanzado**
+3. **Integraciones externas**
+4. **Mobile app**
+
+---
+
+## **🛠️ ACCIÓN INMEDIATA REQUERIDA**
+
+### **Paso 0: Diagnóstico Template System (ESTA SEMANA)**
+```python
+# Investigación requerida:
+1. Verificar estado actual de templates en DB
+2. Probar template generation pipeline
+3. Validar template quality contra emails reales
+4. Identificar problemas específicos en el flujo
+5. Rediseñar sistema si es necesario
+```
+
+### **ESTADO ACTUAL REAL:**
+- ❌ Sistema de templates: **REQUIERE ARREGLO CRÍTICO**
+- ✅ Worker system: Funcionando
+- ✅ Email import: Funcionando  
+- ✅ Bank identification: Funcionando
+- ❌ Transaction extraction: **DEPENDIENTE DE TEMPLATES**

@@ -141,6 +141,8 @@ class TransactionCreationWorker(BaseWorker):
                 if bank:
                     # Assign bank to the parsing job for future reference
                     parsing_job.bank_id = bank.id
+                    # IMPORTANT: Commit immediately to save bank_id assignment
+                    db.session.commit()
                     self.logger.info(f"Identified and assigned bank {bank.name} to EmailParsingJob {parsing_job.id}")
             
             if not bank:
